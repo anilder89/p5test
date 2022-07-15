@@ -48,8 +48,8 @@ rays.rSteps = (2 * Math.PI / (8 * rays.numberOfRays));
 let player = {
     x: 0,
     y: 0,
-    gridNumberX: 200,
-    gridNumberY: 100,
+    gridNumberX: 400,
+    gridNumberY: 200,
     direction: Math.PI / 6,
     rSteps: 8 * rays.rSteps,
     stepsX: 0,
@@ -150,9 +150,9 @@ player.setXY = (x, y) => {
     player.setY(y);
 }
 
-player.directionPoint = (x, y, direction, steps) => {
-    let x2 = Math.sin(direction + Math.PI / 4) * steps + x,
-        y2 = Math.cos(direction + Math.PI / 4) * steps + y;
+player.directionPoint = (x, y, direction, stepsX, stepsY) => {
+    let x2 = Math.sin(direction + Math.PI / 4) * stepsX + x,
+        y2 = Math.cos(direction + Math.PI / 4) * stepsY + y;
 
     return {
         x: x2,
@@ -181,10 +181,10 @@ function keyInputLogic(keyCode) {
     };
 
     if (keyIsDown(DOWN_ARROW)) {
-        newPosition = player.directionPoint(player.x, player.y, player.direction - Math.PI, 1);
+        newPosition = player.directionPoint(player.x, player.y, player.direction - Math.PI, 2, 1);
         player.setXY(newPosition.x, newPosition.y);
     } else if (keyIsDown(UP_ARROW)) {
-        newPosition = player.directionPoint(player.x, player.y, player.direction, 1);
+        newPosition = player.directionPoint(player.x, player.y, player.direction - Math.PI/16, 2, 1);
         player.setXY(newPosition.x, newPosition.y);
     } else if (keyIsDown(LEFT_ARROW)) {
         player.direction += player.rSteps;
