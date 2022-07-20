@@ -436,16 +436,11 @@ function getHitAbsDr(player, grid, screen) {
               hitPointVector = new Vector(hitPoint[0], hitPoint[1]);
 
               if(lengthVector(hitPointVector)>lengthVector(scanline)) {
-                const realAbs = lengthVector(new Vector(hitPointVector.x - scanline.x, hitPointVector.y - scanline.y));
-
-                var projectionCb = document.getElementById("view").checked;
-
-                const scalar = lengthVector(hitPointVector)*lengthVector(playerdV),
-                    projection = Math.acos((hitPointVector.x*playerdV.x+hitPointVector.y*playerdV.y)/scalar),
-                    safeProjection = isNaN(projection) ? 0 : projection,
-                    projectedVectorAbs = Math.cos(safeProjection)*realAbs;
-                
-                const resultAbs = projectionCb ? projectedVectorAbs : realAbs;
+                const realAbs = lengthVector(new Vector(hitPointVector.x - scanline.x, hitPointVector.y - scanline.y)),
+                      projectionCb = document.getElementById("view").checked,
+                      scalar = lengthVector(hitPointVector)*lengthVector(playerdV),
+                      projectedVectorAbs = ((hitPointVector.x*playerdV.x+hitPointVector.y*playerdV.y)/scalar)*realAbs,
+                      resultAbs = projectionCb ? projectedVectorAbs : realAbs;
 
                 AbsDrR.push(
                     [
