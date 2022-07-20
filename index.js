@@ -132,7 +132,7 @@ function isEmpty(x, y, map, screen, emptyIndicator) {
     return false;
 }
 
-function cantPass(ray, player, emptyIndicator, screen, map, wall) {
+function cantPass(ray, player, emptyIndicator, screen, map) {
 
     const boundsCheck = function() {
         if(ray.x + player.x <= 0) {
@@ -421,10 +421,7 @@ function getHitAbsDr(player, grid, screen) {
     // dst=width => fov=90
     const cam = returnCam(player, stepSz*numberOfRays, stepSz*numberOfRays),
           playerdV = returnNormVector(player.dv.x, player.dv.y, stepSz*numberOfRays),
-          step     = returnNormVector(player.x + playerdV.x - cam.x, player.y + playerdV.y - cam.y, stepSz),
-          xDr      = playerdV.x > 0 ? 1 : -1,
-          yDr      = playerdV.y > 0 ? 1 : -1,
-          sign     = xDr + yDr;
+          step     = returnNormVector(player.x + playerdV.x - cam.x, player.y + playerdV.y - cam.y, stepSz);
 
     let AbsDrR= [];
     for(let i= -numberOfRays; i<numberOfRays; i++) {
@@ -441,15 +438,19 @@ function getHitAbsDr(player, grid, screen) {
               if(lengthVector(hitPointVector)>lengthVector(scanline)) {
                 const realAbs = lengthVector(new Vector(hitPointVector.x - scanline.x, hitPointVector.y - scanline.y));
 
+                var projectionCb = document.getElementById("view").checked;
+
                 const scalar = lengthVector(hitPointVector)*lengthVector(playerdV),
                     projection = Math.acos((hitPointVector.x*playerdV.x+hitPointVector.y*playerdV.y)/scalar),
                     safeProjection = isNaN(projection) ? 0 : projection,
-                    projectedVector = Math.cos(safeProjection)*realAbs;
+                    projectedVectorAbs = Math.cos(safeProjection)*realAbs;
+                
+                const resultAbs = projectionCb ? projectedVectorAbs : realAbs;
 
                 AbsDrR.push(
                     [
                         scanline , 
-                        projectedVector, 
+                        resultAbs, 
                         hitPoint[2]
                     ]
                     );
@@ -459,7 +460,7 @@ function getHitAbsDr(player, grid, screen) {
         }
 
 // Draw functions
-function drawMapToScreen(map, screen, colors) {
+function drawMapToScreen(map, screen) {
     for(let i=0; i<map.array2D.length; i++) {
         for(let j=0; j<map.array2D[i].length; j++) {
             const originToDraw    = gridToScreen(i, j, map, screen),
@@ -489,16 +490,16 @@ function renderRays(raysToRender, player, grid, screen) {
                 Abs= ray[1],
             startPs= new Vector(player.x + Dr.x, player.y + Dr.y);
 
-        drawVector = returnNormVector(Dr.x, Dr.y, Abs);
+        const drawVector = returnNormVector(Dr.x, Dr.y, Abs);
         screen.buffer.line(startPs.x, startPs.y, drawVector.x + startPs.x, drawVector.y + startPs.y);
     });
 }
 
-function Pixels(raysToRender, player, grid, screen) {
+function Pixels(raysToRender) {
     let returnPixels= [];
         for(let pixelX=0; pixelX<raysToRender.length; pixelX++) {
                 const ray    = raysToRender[pixelX],
-                      abs    = ray[1]
+                      abs    = ray[1],
                       reason = ray[2],
                       pixelColor  = decodeMapElement(reason);
   
@@ -507,8 +508,8 @@ function Pixels(raysToRender, player, grid, screen) {
     return returnPixels;
 }
 
-function renderImage(raysToRender, player, grid, screen) {
-    const pixels = Pixels(raysToRender, player, grid, screen);
+function renderImage(raysToRender, screen) {
+    const pixels = Pixels(raysToRender);
     const middle = screen.height/2;
     
         for(let pixelX=0; pixelX<pixels.length; pixelX++) {
@@ -528,8 +529,8 @@ function renderImage(raysToRender, player, grid, screen) {
                     rectDrawer(pixelX*stepsX, middle - pixelY, stepsX, stepsY, ...pixelColor, screen.buffer);
                 }
                 else {
-                    rectDrawer(pixelX*stepsX, middle + pixelY, stepsX, stepsY, ...mapColors.black, screen.buffer);
-                    rectDrawer(pixelX*stepsX, middle - pixelY, stepsX, stepsY, ...mapColors.black, screen.buffer);
+                    rectDrawer(pixelX*stepsX, middle + pixelY, stepsX, stepsY, ...floorColor, screen.buffer);
+                    rectDrawer(pixelX*stepsX, middle - pixelY, stepsX, stepsY, ...skyColor, screen.buffer);
                 }
             }
         }
@@ -559,7 +560,7 @@ mapGrid.array2D =[
     [1, 2, 3, 2, 0, 0, 3, 2, 3, 1],
     [1, 0, 0, 0, 0, 0, 2, 3, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 4, 0, 0, 1, 0, 2],
+    [1, 0, 0, 0, 5, 0, 0, 1, 0, 2],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 2],
     [1, 0, 0, 0, 0, 0, 0, 5, 0, 2],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -600,7 +601,9 @@ let player = new Player(
 const stepsX = 10, // pixel size in x direction
       stepsY = 5,  // pixel size in y direction
       stepSz = 0.125, // ray steps
-      numberOfRays = 40; // number of rays
+      numberOfRays = 40, // number of rays
+      floorColor = mapColors.white,
+      skyColor = mapColors.purple;
 
 // P5 entrypoints for canvas and input
 function setup() {
@@ -619,7 +622,7 @@ function draw() {
 
     const raysToRender = getHitAbsDr(player, mapGrid, bottomScreen);
     renderRays(raysToRender, player, mapGrid, bottomScreen);
-    renderImage(raysToRender, player, mapGrid, topScreen); 
+    renderImage(raysToRender, topScreen); 
 
     drawScreensToCanvas(topScreen , bottomScreen);
     movePlayer(mapGrid);
