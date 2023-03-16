@@ -205,7 +205,9 @@ function movePlayer(map) {
             player.x= x;
             player.y= y;
         }
-    } else if (keyIsDown(LEFT_ARROW)) {
+    }
+    
+    if (keyIsDown(LEFT_ARROW)) {
         rotateVector(
             player.dv, 
             -player.rs
